@@ -1,37 +1,47 @@
 {
-  "name": "@flowfox/backend",
-  "version": "0.1.1",
+  "name": "@pagewise/backend",
+  "version": "1.0.0",
   "main": "server.ts",
   "type": "module",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "nodemon",
+    "dev": "pnpm db:up && tsx watch --clear-screen=false --include \"db/migrations/*.sql\" server.ts",
+    "db:up": "node scripts/db-up.mjs",
+    "db:down": "docker compose -f ../../docker-compose.yml stop postgres",
+    "test:unit": "vitest",
     "build": "tsc",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@flowfox/shared": "workspace:*",
+    "@pagewise/shared": "workspace:*",
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
-    "dotenv": "^17.2.4",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.4",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.2.0"
+    "express-rate-limit": "^8.7.3",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.5.0",
+    "@types/pg": "^8.23.1",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^10.1.0",
-    "kill-port": "^2.0.1",
-    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.58.0"
+    "typescript-eslint": "^8.58.0",
+    "vitest": "^4.1.12"
   }
 }

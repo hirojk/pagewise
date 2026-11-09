@@ -1,16 +1,22 @@
-import { Schema } from 'mongoose'
-import { getDatabase } from '../config/database.js'
-import { zodToMongooseSchema } from '../utils/zodToMongoose.js'
-import { UserSchema } from '@flowfox/shared'
+import { getTableColumns } from 'drizzle-orm'
+import { integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { ROLE_VALUES, type UserType } from '@pagewise/shared'
 
-const userSchema = new Schema(zodToMongooseSchema(UserSchema), { timestamps: true })
+export const ADMIN_USER_ID = 1
 
-userSchema.set('toJSON', {
-  transform: (doc, ret) => {
-    delete ret.password
-    return ret
-  },
+export const users = pgTable('users', {
+  id: integer('id').primaryKey(),
+  username: text('username').notNull().unique(),
+  name: text('name').notNull(),
+  email: text('email').notNull().default(''),
+  password: text('password').notNull(),
+  role: text('role').$type<UserType['role']>().notNull().default(ROLE_VALUES.USER),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 })
 
-export const UserModel = () => getDatabase().model('User', userSchema)
-export default UserModel
+const { password: _password, ...publicColumns } = getTableColumns(users)
+export const publicUserColumns = publicColumns

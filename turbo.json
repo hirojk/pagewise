@@ -1,22 +1,78 @@
 {
-  "$schema": "https://v2-9-14.turborepo.dev/schema.json",
+  "$schema": "https://v2-11-10.turborepo.dev/schema.json",
   "ui": "tui",
   "tasks": {
     "dev": {
       "cache": false,
       "persistent": true,
-      "env": ["STAGE_PASS", "API_URL", "ADMIN_USER", "ADMIN_PASS", "ACCESS_TOKEN_SECRET", "MONGODB_URI", "APP_ENV"]
+      "env": [
+        "API_PORT",
+        "FRONTEND_URL",
+        "ADMIN_USER",
+        "ADMIN_PASS",
+        "DATABASE_URL",
+        "APP_ENV",
+        "COOKIE_SECURE",
+        "EXPO_PUBLIC_API_PORT",
+        "EXPO_PUBLIC_API_URL"
+      ]
     },
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"],
-      "env": ["STAGE_PASS", "API_URL", "ADMIN_USER", "ADMIN_PASS", "ACCESS_TOKEN_SECRET", "MONGODB_URI", "APP_ENV"]
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**"
+      ],
+      "env": [
+        "API_PORT",
+        "FRONTEND_URL",
+        "ADMIN_USER",
+        "ADMIN_PASS",
+        "DATABASE_URL",
+        "APP_ENV",
+        "COOKIE_SECURE",
+        "EXPO_PUBLIC_API_PORT",
+        "EXPO_PUBLIC_API_URL"
+      ]
+    },
+    "test:unit": {
+      "cache": false,
+      "persistent": true,
+      "env": [
+        "TEST_DATABASE_URL"
+      ]
     },
     "lint": {
-      "dependsOn": ["^lint"]
+      "dependsOn": [
+        "^lint"
+      ]
     },
     "lint:fix": {
-      "dependsOn": ["^lint:fix"]
+      "dependsOn": [
+        "^lint:fix"
+      ]
+    },
+    "@pagewise/frontend#dev": {
+      "cache": false,
+      "persistent": true,
+      "interactive": true,
+      "env": [
+        "API_PORT",
+        "FRONTEND_URL",
+        "ADMIN_USER",
+        "ADMIN_PASS",
+        "DATABASE_URL",
+        "APP_ENV",
+        "COOKIE_SECURE",
+        "EXPO_PUBLIC_API_PORT",
+        "EXPO_PUBLIC_API_URL"
+      ],
+      "passThroughEnv": [
+        "EXPO_TOKEN",
+        "EXPO_USERNAME",
+        "EXPO_PASSWORD"
+      ]
     }
   }
 }

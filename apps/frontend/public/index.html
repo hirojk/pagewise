@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Pagewise</title>
+
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+    <meta name="theme-color" content="#FCF7EF" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Pagewise" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+        background-color: #fcf7ef;
+        overscroll-behavior-x: none;
+      }
+      body {
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <script>
+      // iPad/iPhone Safari: swiping in from the left or right edge goes back/forward and
+      // fights dragging on the board. Safari has no switch for it, but a touch that starts
+      // at the very edge can be blocked, which stops the gesture from starting.
+      // (Taps in the outer 20px don't register; nothing tappable sits there.)
+      ;(function () {
+        var EDGE = 20
+        document.addEventListener(
+          'touchstart',
+          function (event) {
+            var x = event.touches[0] && event.touches[0].pageX
+            if (x !== undefined && (x < EDGE || x > window.innerWidth - EDGE)) event.preventDefault()
+          },
+          { passive: false },
+        )
+      })()
+    </script>
+  </body>
+</html>

@@ -1,17 +1,18 @@
-import type { IconType } from '@typeDefs/globalTypes'
-import { PRIORITY_VALUES, type BoardCardType } from '@flowfox/shared'
+import { PRIORITY_VALUES, type BoardCardType, type PriorityType } from '@pagewise/shared'
 
-export const PRIORITY_LIST: IconType[] = [
-  { name: 'Critical', icon: 'icon-critical' },
-  { name: 'High', icon: 'icon-high' },
-  { name: 'Medium', icon: 'icon-medium' },
-  { name: 'Low', icon: 'icon-low' },
-] as const
+import type { IconName } from '@components/ui/Icon'
 
-export const sortedCardsByPriority = (cards: BoardCardType[]): BoardCardType[] => {
-  return [...cards].sort((a, b) => {
-    const aIdx = PRIORITY_VALUES.indexOf(a.priority ?? 'Medium')
-    const bIdx = PRIORITY_VALUES.indexOf(b.priority ?? 'Medium')
-    return aIdx - bIdx
-  })
-}
+export const PRIORITY_LIST: { name: PriorityType; icon: IconName }[] = [
+  { name: 'Critical', icon: 'critical' },
+  { name: 'High', icon: 'high' },
+  { name: 'Medium', icon: 'medium' },
+  { name: 'Low', icon: 'low' },
+]
+
+export const getPriorityIcon = (priority: PriorityType = 'Medium'): IconName =>
+  PRIORITY_LIST.find((item) => item.name === priority)?.icon ?? 'medium'
+
+export const sortedCardsByPriority = (cards: BoardCardType[]): BoardCardType[] =>
+  [...cards].sort(
+    (a, b) => PRIORITY_VALUES.indexOf(a.priority ?? 'Medium') - PRIORITY_VALUES.indexOf(b.priority ?? 'Medium'),
+  )

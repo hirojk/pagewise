@@ -13,7 +13,6 @@ build
 app/frontend/assets/**
 
 # Datatypes
-**/*.json
 *.md
 
 # Config

@@ -1,7 +1,0 @@
-{
-  "watch": ["."],
-  "ext": "ts,json",
-  "ignore": ["node_modules", "dist"],
-  "exec": "npx kill-port 5000 && tsx server.ts",
-  "restartable": "rs"
-}

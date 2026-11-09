@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793974919882,
+      "tag": "0000_mixed_reavers",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794167301514,
+      "tag": "0001_ambitious_rocket_racer",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794169414065,
+      "tag": "0002_hash_session_tokens",
+      "breakpoints": true
+    }
+  ]
+}

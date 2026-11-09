@@ -6,9 +6,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 const root = path.resolve(__dirname, '../../../')
-const requiredEnvVars = ['ADMIN_USER', 'ADMIN_PASS', 'ACCESS_TOKEN_SECRET', 'MONGODB_URI', 'APP_ENV']
+const requiredEnvVars = ['FRONTEND_URL', 'ADMIN_USER', 'ADMIN_PASS', 'DATABASE_URL', 'APP_ENV']
 
-// base env
 dotenv.config({
   path: path.join(root, '.env'),
   quiet: true,

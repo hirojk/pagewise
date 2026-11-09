@@ -1,32 +1,34 @@
-import axios from 'axios'
+import { create as createAxios } from 'axios'
+import Constants from 'expo-constants'
+import { Platform } from 'react-native'
 
-const API_URL = import.meta.env.API_URL || 'http://localhost:5000'
+import { resolveApiUrl } from './apiUrl'
+import { tokenStorage } from './tokenStorage'
 
-export const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+export const apiUrl = resolveApiUrl({
+  isWeb: Platform.OS === 'web',
+  apiPort: process.env.EXPO_PUBLIC_API_PORT,
+  apiUrl: process.env.EXPO_PUBLIC_API_URL,
+  location: Platform.OS === 'web' ? window.location : undefined,
+  devServerHost: Constants.expoConfig?.hostUri,
 })
 
-api.interceptors.request.use((config) => {
-  const accessToken = sessionStorage.getItem('userToken')
+export type ApiResponse<T> = { success: boolean; message?: string; data: T }
 
-  if (accessToken) {
-    config.headers['Authorization'] = `Bearer ${accessToken}`
+export const api = createAxios({
+  baseURL: apiUrl,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: Platform.OS === 'web',
+})
+
+api.interceptors.request.use(async (config) => {
+  const token = await tokenStorage.get()
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
-
   return config
 })
 
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (import.meta.env.DEV) {
-      console.error('API Error:', error.response?.data || error.message)
-    }
-    return Promise.reject(error)
-  },
-)
-
-export default api
+export const unwrap = <T>(promise: Promise<{ data: ApiResponse<T> }>): Promise<T> =>
+  promise.then((response) => response.data.data)

@@ -1,0 +1,10 @@
+**/node_modules
+**/dist
+**/coverage
+**/.turbo
+.git
+.vscode
+**/.env
+**/.env.*
+**/.expo
+*.md
