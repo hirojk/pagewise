@@ -32,7 +32,7 @@ export const BoardCardSchema = z.object({
   id: z.number(),
   name: z.string().default(''),
   priority: z.enum(PRIORITY_VALUES).default(DEFAULT_PRIORITY),
-  description: z.string().default('No Description'),
+  description: z.string().default(''),
   checklist: z.array(CheckboxItemSchema).default([]),
   startDate: z.coerce.date(),
   deadline: z.coerce.date(),

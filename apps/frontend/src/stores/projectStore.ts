@@ -1,89 +1,67 @@
-import { defineStore } from 'pinia'
-import api from '@services/api'
-import type { ProjectType } from '@flowfox/shared'
+import { create } from 'zustand'
+import type { PageTypeKey, ProjectType } from '@pagewise/shared'
 
-export const useProjectStore = defineStore('project', {
-  state: () => ({
-    allProjects: [] as ProjectType[],
-    activeProject: null as ProjectType | null,
-  }),
+import { api, unwrap } from '@services/api'
 
-  actions: {
-    async loadProjects(): Promise<void> {
-      try {
-        const response = (await api.get(`/api/v1/projects/user`)) as { data: { projects: ProjectType[] } }
+export type PageDraft = { type: 'page'; projectId: number; pageType: PageTypeKey }
+export type Draft = { type: 'project' } | PageDraft
 
-        this.allProjects = response.data.projects
-      } catch (error) {
-        console.error('Error loading projects:', error)
-        throw error
-      }
-    },
-    async createNewProject(): Promise<ProjectType> {
-      try {
-        const response = (await api.post(`/api/v1/projects/`)) as { data: ProjectType }
+type ProjectState = {
+  allProjects: ProjectType[]
+  draft: Draft | null
+  startDraft: (draft: Draft) => void
+  cancelDraft: () => void
+  loadProjects: () => Promise<void>
+  createNewProject: (name: string) => Promise<ProjectType>
+  updateProjectName: (projectId: number, name: string) => Promise<void>
+  deleteProject: (projectId: number) => Promise<void>
+  reset: () => void
+}
 
-        this.allProjects.push(response.data)
-        this.activeProject = response.data
+export const useProjectStore = create<ProjectState>((set) => ({
+  allProjects: [],
+  draft: null,
 
-        return response.data
-      } catch (error) {
-        console.error('Error loading projects:', error)
-        throw error
-      }
-    },
-    getFirstComponentId(projectId: number): number | null {
-      const project = this.allProjects.find((p) => p.id === projectId)
-
-      return (project?.components[0]?.id as number) ?? null
-    },
-    async deleteProject(projectId: number): Promise<void> {
-      if (!projectId) return
-
-      try {
-        await api.delete(`/api/v1/projects/${projectId}`)
-
-        this.allProjects = this.allProjects.filter((project) => project.id !== projectId)
-        this.activeProject = null
-      } catch (error) {
-        console.error('Error loading projects:', error)
-        throw error
-      }
-    },
-    async updateProjectName(projectId: number, newName: string): Promise<void> {
-      if (!projectId) return
-
-      try {
-        await api.put(`/api/v1/projects/${projectId}`, {
-          name: newName,
-        })
-
-        this.allProjects = this.allProjects.map((project) => {
-          if (project.id === projectId) {
-            return { ...project, name: newName }
-          }
-          return project
-        })
-
-        if (this.activeProject?.id === projectId) {
-          this.activeProject.name = newName
-        }
-      } catch (error) {
-        console.error('Error updating project name:', error)
-        throw error
-      }
-    },
-    async updateProject(projectId: number): Promise<void> {
-      if (!projectId) return
-
-      try {
-        const response = (await api.get(`/api/v1/projects/user`)) as { data: { projects: ProjectType[] } }
-
-        this.activeProject = response.data.projects.find((project) => project.id === projectId) || null
-      } catch (error) {
-        console.error('Error loading project:', error)
-        this.activeProject = null
-      }
-    },
+  startDraft(draft) {
+    set({ draft })
   },
-})
+
+  cancelDraft() {
+    set({ draft: null })
+  },
+
+  async loadProjects() {
+    const { projects } = await unwrap<{ projects: ProjectType[] }>(api.get('/api/v1/projects/user'))
+    set({ allProjects: projects })
+  },
+
+  async createNewProject(name) {
+    const project = await unwrap<ProjectType>(api.post('/api/v1/projects/', { name }))
+    set((state) => ({ allProjects: [...state.allProjects, project], draft: null }))
+    return project
+  },
+
+  async updateProjectName(projectId, name) {
+    await api.put(`/api/v1/projects/${projectId}`, { name })
+    set((state) => ({
+      allProjects: state.allProjects.map((project) => (project.id === projectId ? { ...project, name } : project)),
+    }))
+  },
+
+  async deleteProject(projectId) {
+    await api.delete(`/api/v1/projects/${projectId}`)
+    set((state) => ({ allProjects: state.allProjects.filter((project) => project.id !== projectId) }))
+  },
+
+  reset() {
+    set({ allProjects: [], draft: null })
+  },
+}))
+
+export const useIsDraftingProject = (): boolean => useProjectStore((state) => state.draft?.type === 'project')
+
+export const usePageDraft = (projectId: number): PageDraft | null =>
+  useProjectStore((state) => (state.draft?.type === 'page' && state.draft.projectId === projectId ? state.draft : null))
+
+export const useProject = (projectId: number): ProjectType | undefined =>
+  useProjectStore((state) => state.allProjects.find((project) => project.id === projectId))

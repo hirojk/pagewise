@@ -10,4 +10,10 @@ export const UserSchema = z.object({
   role: z.enum(ROLE_VALUES).default(ROLE_VALUES.USER),
 })
 
+export const LoginSchema = z.object({
+  username: z.string().trim().min(1),
+  password: z.string().min(1),
+})
+
 export type UserType = z.infer<typeof UserSchema>
+export type LoginType = z.infer<typeof LoginSchema>

@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "skipDefaultLibCheck": true,
     "paths": {
-      "@flowfox/shared": ["../shared/dist/index.d.ts"]
+      "@pagewise/shared": ["../shared/dist/index.d.ts"]
     }
   },
   "include": ["**/*.ts"],

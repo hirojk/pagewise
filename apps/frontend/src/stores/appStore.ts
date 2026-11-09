@@ -1,16 +1,13 @@
-import { defineStore } from 'pinia'
-import type { ModalWindowType } from '@typeDefs/globalTypes'
+import { create } from 'zustand'
 
-export const useAppStore = defineStore('app', {
-  state: () => ({
-    isSidebarOpen: false as boolean,
-    isEditing: false as boolean,
-    isDropdownOpen: false as boolean,
-    currentEditingId: null as number | null,
+type AppState = {
+  isSidebarOpen: boolean
+  setSidebarOpen: (isOpen: boolean) => void
+  toggleSidebar: () => void
+}
 
-    isModalOpen: false as boolean,
-    modalContent: null as ModalWindowType | null,
-
-    justDropped: false as boolean,
-  }),
-})
+export const useAppStore = create<AppState>((set) => ({
+  isSidebarOpen: false,
+  setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+}))

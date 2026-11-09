@@ -7,13 +7,13 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "package.json": "package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb, .npmrc, .nvmrc, nodemon.json",
-    "tsconfig.json": "tsconfig.*.json, env.d.ts",
+    "tsconfig.json": "tsconfig.*.json, expo-env.d.ts",
     ".env": ".env.*",
     ".gitignore": ".gitattributes, .gitmodules",
     ".eslintrc*": ".eslintignore",
     ".prettierrc*": ".prettierignore",
-    ".stylelintrc*": ".stylelintignore",
-    "vite.config.*": "vitest.config.*, cypress.config.*, playwright.config.*",
+    "docker-compose.yml": "docker-compose*, .dockerignore",
+    "nginx.conf": "nginx.prod.conf, nginx.staging.conf",
     "README.md": "CHANGELOG.md, CONTRIBUTING.md, LICENSE, CODE_OF_CONDUCT.md"
   },
 
@@ -21,8 +21,5 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": "explicit"
   },
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-
-  "stylelint.enable": true,
-  "stylelint.validate": ["css", "scss", "vue"]
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

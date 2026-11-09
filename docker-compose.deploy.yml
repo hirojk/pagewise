@@ -1,0 +1,65 @@
+# Staging and production. Each runs as its own stack with its own database:
+#   docker compose -p pagewise-staging --env-file .env.staging -f docker-compose.deploy.yml up -d
+#   docker compose -p pagewise-production --env-file .env.production -f docker-compose.deploy.yml up -d
+# CI pulls the images named in the env file. Add --build to build them on the machine instead.
+
+services:
+  postgres:
+    container_name: pagewise-${APP_ENV:?Set APP_ENV in the env file}-postgres
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pagewise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the env file}
+      POSTGRES_DB: pagewise
+    # No published port: only the backend can reach the database.
+    volumes:
+      - ${PAGEWISE_DATA_DIR:?Set PAGEWISE_DATA_DIR in the env file}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pagewise -d pagewise']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    container_name: pagewise-${APP_ENV:?Set APP_ENV in the env file}-backend
+    image: ${BACKEND_IMAGE:?Set BACKEND_IMAGE in the env file}
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://pagewise:${POSTGRES_PASSWORD}@postgres:5432/pagewise
+      FRONTEND_URL: http://${APP_HOST:?Set APP_HOST in the env file}:${FRONTEND_PORT:?Set FRONTEND_PORT in the env file}
+      ADMIN_USER: ${ADMIN_USER:?Set ADMIN_USER in the env file}
+      ADMIN_PASS: ${ADMIN_PASS:?Set ADMIN_PASS in the env file}
+      APP_ENV: ${APP_ENV:?Set APP_ENV in the env file}
+      COOKIE_SECURE: 'false'
+      API_PORT: '5000'
+    ports:
+      - '${BACKEND_PORT:?Set BACKEND_PORT in the env file}:5000'
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://localhost:5000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  frontend:
+    container_name: pagewise-${APP_ENV:?Set APP_ENV in the env file}-frontend
+    image: ${FRONTEND_IMAGE:?Set FRONTEND_IMAGE in the env file}
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+      args:
+        API_PORT: ${BACKEND_PORT}
+        NGINX_CONF: ${NGINX_CONF:-nginx.conf}
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '${FRONTEND_PORT}:80'

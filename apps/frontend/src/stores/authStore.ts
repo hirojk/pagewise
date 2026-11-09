@@ -1,32 +1,49 @@
-import { defineStore } from 'pinia'
-import api from '@services/api'
-import { jwtDecode } from 'jwt-decode'
-import type { UserType } from '@flowfox/shared'
+import { isAxiosError } from 'axios'
+import { create } from 'zustand'
+import type { UserType } from '@pagewise/shared'
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    userToken: sessionStorage.getItem('userToken') as string | null,
-  }),
+import { api, unwrap } from '@services/api'
+import { tokenStorage } from '@services/tokenStorage'
 
-  getters: {
-    activeUser: (state) => {
-      if (!state.userToken) return null
-      return jwtDecode<Omit<UserType, 'password'>>(state.userToken)
-    },
-    isLoggedIn: (state) => !!state.userToken,
+type AuthState = {
+  user: UserType | null
+  isLoading: boolean
+  login: (username: string, password: string) => Promise<void>
+  fetchUser: () => Promise<void>
+  logout: () => Promise<void>
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  isLoading: true,
+
+  async login(username, password) {
+    const { sessionToken } = await unwrap<{ sessionToken: string }>(api.post('/api/auth/login', { username, password }))
+
+    await tokenStorage.set(sessionToken)
+    await get().fetchUser()
   },
 
-  actions: {
-    async login(username: string, password: string): Promise<void> {
-      const response = await api.post('/api/auth/login', { username, password })
-
-      this.userToken = response.data.userToken
-      sessionStorage.setItem('userToken', response.data.userToken)
-    },
-
-    logout(): void {
-      this.userToken = null
-      sessionStorage.removeItem('userToken')
-    },
+  async fetchUser() {
+    try {
+      const user = await unwrap<UserType>(api.get('/api/v1/users/me'))
+      set({ user })
+    } catch (error) {
+      if (!isAxiosError(error) || error.response?.status !== 401) {
+        console.error('fetch user session error:', error)
+      }
+      set({ user: null })
+    } finally {
+      set({ isLoading: false })
+    }
   },
-})
+
+  async logout() {
+    try {
+      await api.post('/api/auth/logout')
+    } finally {
+      await tokenStorage.remove()
+      set({ user: null })
+    }
+  },
+}))

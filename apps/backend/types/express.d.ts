@@ -1,8 +1,9 @@
-import 'express'
-import type { UserType } from '@flowfox/shared'
+import { SessionPayload } from '../utils/sessionStore.js'
 
-declare module 'express' {
-  interface Request {
-    user?: Omit<UserType, 'password'>
+declare global {
+  namespace Express {
+    interface Request {
+      user?: SessionPayload
+    }
   }
 }

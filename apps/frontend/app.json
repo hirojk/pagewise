@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Pagewise",
+    "slug": "pagewise",
+    "scheme": "pagewise",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./public/static/icons/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#b45e4c",
+        "foregroundImage": "./public/static/icons/android-icon-foreground.png",
+        "backgroundImage": "./public/static/icons/android-icon-background.png",
+        "monochromeImage": "./public/static/icons/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "bundler": "metro",
+      "favicon": "./public/favicon.ico"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,11 +1,15 @@
 {
-  "name": "@flowfox/shared",
-  "version": "0.1.1",
+  "name": "@pagewise/shared",
+  "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsc --watch",
+    "test:unit": "vitest",
     "build": "tsc"
   },
   "exports": {
@@ -15,6 +19,9 @@
     }
   },
   "dependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.12"
   }
 }

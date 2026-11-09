@@ -1,5 +1,5 @@
 import { Response } from 'express'
-import { APP_ENV_VALUES } from '@flowfox/shared'
+import { APP_ENV_VALUES } from '@pagewise/shared'
 
 const isDevelopment = process.env.APP_ENV === APP_ENV_VALUES.DEVELOPMENT
 
@@ -58,5 +58,14 @@ export const serviceUnavailableResponse = (res: Response, messagetext: string): 
   res.status(503).json({
     success: false,
     error: isDevelopment ? messagetext : undefined,
+  })
+}
+
+export const tooManyRequestsResponse = (res: Response, messagetext: string, retryAfterSeconds: number): void => {
+  res.setHeader('Retry-After', String(retryAfterSeconds))
+  res.status(429).json({
+    success: false,
+    error: messagetext,
+    retryAfter: retryAfterSeconds,
   })
 }

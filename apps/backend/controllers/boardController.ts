@@ -1,6 +1,9 @@
 import { Request, Response } from 'express'
-import { ProjectModel } from '../models/Project.js'
-import { BoardSchema, generateId, type BoardType } from '@flowfox/shared'
+import { and, eq } from 'drizzle-orm'
+import { BoardSchema, CreateItemSchema, generateId, type BoardType, type ComponentType } from '@pagewise/shared'
+import { db } from '../db/index.js'
+import { accessibleBy, changeProjectComponents, projects } from '../models/Project.js'
+import { parseId } from '../utils/helpers.js'
 
 import {
   successResponse,
@@ -10,28 +13,32 @@ import {
   serverFailureResponse,
 } from '../utils/responses.js'
 
+const findBoardIndex = (components: ComponentType[], boardId: number): number =>
+  components.findIndex((component) => component.type === 'board' && component.id === boardId)
+
 // POST: create new board component
 export const createBoardComponent = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { projectId } = req.params
-    const userId = req.user!.id
-
-    const project = await ProjectModel().findOne({
-      id: Number(projectId),
-    })
-    if (!project) {
-      notFoundResponse(res, 'Project not found')
+    const body = CreateItemSchema.safeParse(req.body ?? {})
+    if (!body.success) {
+      badRequestResponse(res, 'Invalid board data')
       return
     }
 
     const newBoard = BoardSchema.parse({
       id: generateId(),
-      creatorId: userId,
+      creatorId: req.user!.id,
+      name: body.data.name,
     })
 
-    const components = project.components as BoardType[]
-    components.push(newBoard)
-    await project.save()
+    const change = await changeProjectComponents(parseId(req.params.projectId), req.user!, (components) => {
+      components.push(newBoard)
+      return newBoard
+    })
+    if (!change) {
+      notFoundResponse(res, 'Project not found')
+      return
+    }
 
     createdResponse(res, 'New Board created successfully', newBoard)
   } catch (error) {
@@ -42,16 +49,16 @@ export const createBoardComponent = async (req: Request, res: Response): Promise
 // GET: get board by id
 export const getBoardById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { projectId, boardId } = req.params
-
-    const project = await ProjectModel().findOne({ id: Number(projectId) })
+    const [project] = await db
+      .select({ components: projects.components })
+      .from(projects)
+      .where(and(eq(projects.id, parseId(req.params.projectId)), accessibleBy(req.user!)))
     if (!project) {
       notFoundResponse(res, 'Project not found')
       return
     }
 
-    const components = project.components as BoardType[]
-    const board = components.find((component) => component.type === 'board' && component.id === Number(boardId))
+    const board = project.components[findBoardIndex(project.components, parseId(req.params.boardId))]
     if (!board) {
       notFoundResponse(res, 'Board not found')
       return
@@ -66,25 +73,20 @@ export const getBoardById = async (req: Request, res: Response): Promise<void> =
 // DELETE: delete board by ID
 export const deleteBoardById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { projectId, boardId } = req.params
+    const boardId = parseId(req.params.boardId)
 
-    const project = await ProjectModel().findOne({ id: Number(projectId) })
-    if (!project) {
+    const change = await changeProjectComponents(parseId(req.params.projectId), req.user!, (components) => {
+      const boardIndex = findBoardIndex(components, boardId)
+      return boardIndex === -1 ? undefined : components.splice(boardIndex, 1)[0]
+    })
+    if (!change) {
       notFoundResponse(res, 'Project not found')
       return
     }
-
-    const components = project.components as BoardType[]
-    const boardExists = components.find(
-      (component: BoardType) => component.type === 'board' && component.id === Number(boardId),
-    )
-    if (!boardExists) {
+    if (!change.result) {
       notFoundResponse(res, 'Board not found')
       return
     }
-
-    project.components = components.filter((component: BoardType) => component.id !== Number(boardId))
-    await project.save()
 
     successResponse(res, 'Board deleted successfully')
   } catch (error) {
@@ -95,17 +97,18 @@ export const deleteBoardById = async (req: Request, res: Response): Promise<void
 // PUT: update board name and data
 export const updateBoardById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const projectId = Number(req.params.projectId)
-    const boardId = Number(req.params.boardId)
+    const projectId = parseId(req.params.projectId)
+    const boardId = parseId(req.params.boardId)
     const { name, boardData } = req.body
 
     if (name) {
-      const result = await ProjectModel().updateOne(
-        { id: projectId, 'components.id': boardId },
-        { $set: { 'components.$.name': name } },
-      )
-
-      if (result.matchedCount === 0) {
+      const change = await changeProjectComponents(projectId, req.user!, (components) => {
+        const board = components[findBoardIndex(components, boardId)]
+        if (!board) return undefined
+        board.name = name
+        return board
+      })
+      if (!change?.result) {
         notFoundResponse(res, 'Board not found')
         return
       }
@@ -115,26 +118,29 @@ export const updateBoardById = async (req: Request, res: Response): Promise<void
     }
 
     if (boardData) {
-      const project = await ProjectModel().findOne({ id: projectId })
-      if (!project) {
+      const parsedBoard = BoardSchema.safeParse({ ...boardData, id: boardId, type: 'board' })
+      if (!parsedBoard.success) {
+        badRequestResponse(res, 'Invalid board data')
+        return
+      }
+      const updatedBoard: BoardType = parsedBoard.data
+
+      const change = await changeProjectComponents(projectId, req.user!, (components) => {
+        const boardIndex = findBoardIndex(components, boardId)
+        if (boardIndex === -1) return undefined
+        components[boardIndex] = updatedBoard
+        return updatedBoard
+      })
+      if (!change) {
         notFoundResponse(res, 'Project not found')
         return
       }
-
-      const components = project.components as BoardType[]
-      const boardIndex = components.findIndex(
-        (component: BoardType) => component.type === 'board' && component.id === boardId,
-      )
-      if (boardIndex === -1) {
+      if (!change.result) {
         notFoundResponse(res, 'Board not found')
         return
       }
 
-      components[boardIndex] = { ...boardData, id: boardId, type: 'board' }
-      project.components = components as BoardType[]
-      await project.save()
-
-      successResponse(res, 'Board updated successfully', components[boardIndex])
+      successResponse(res, 'Board updated successfully', updatedBoard)
       return
     }
 
